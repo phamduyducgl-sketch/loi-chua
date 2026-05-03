@@ -523,21 +523,27 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 .word-token.fill.wrong   .w-input { border-color: var(--again); background: rgba(224,88,88,0.08); color: var(--again); }
 .word-token.fill.hinted  .w-input { border-color: var(--gold); background: var(--gold-dim); color: var(--gold-l); font-style: italic; }
 
-/* Reveal-all toggle button — prominent, top-right of verse stage */
+/* Reveal-all toggle button — floats at viewport top-right while scrolling */
 .reveal-all-btn {
-  position: absolute;
-  top: 14px; right: 16px;
+  position: fixed;
+  top: 16px; right: 16px;
   font-size: 13px; font-weight: 600;
   color: var(--gold);
   background: var(--gold-dim);
-  border: 1px solid rgba(200,164,86,0.35);
+  border: 1px solid rgba(200,164,86,0.45);
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 9px 14px;
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
   transition: all 0.18s;
   letter-spacing: 0.02em;
-  z-index: 2;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+}
+@media (max-width: 540px) {
+  .reveal-all-btn { top: 12px; right: 12px; font-size: 12px; padding: 7px 11px; }
 }
 .reveal-all-btn:hover {
   background: rgba(200,164,86,0.22);
@@ -899,9 +905,10 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
       <span class="slider-val" id="slider-val">0%</span>
     </div>
     <div class="mode-btns">
-      <button class="mode-btn active" id="mb-normal"  onclick="setMode('normal')">Thẻ ẩn</button>
-      <button class="mode-btn"        id="mb-initial" onclick="setMode('initial')">Chữ đầu</button>
-      <button class="mode-btn"        id="mb-fill"    onclick="setMode('fill')">Gõ từ</button>
+      <button class="mode-btn active" id="mb-normal"   onclick="setMode('normal')">Thẻ ẩn</button>
+      <button class="mode-btn"        id="mb-headline" onclick="setMode('headline')" title="Chỉ hiện từ đầu của mỗi dòng/câu">Đầu câu</button>
+      <button class="mode-btn"        id="mb-initial"  onclick="setMode('initial')">Chữ đầu</button>
+      <button class="mode-btn"        id="mb-fill"     onclick="setMode('fill')">Gõ từ</button>
     </div>
   </div>
 
@@ -1156,7 +1163,7 @@ let cfg = { newPerDay: 5, maxReview: 20, startMask: 0, prioritizeWeak: true };
 
 let queue = [], qIdx = 0, qTotal = 0;
 let curPassage = null;         // passage object from db
-let curMode = 'normal';        // normal | initial | fill
+let curMode = 'normal';        // normal | headline | initial | fill
 let curMaskPct = 0;            // slider value 0–100
 let wordTokens = [];           // array of {el, word, idx, masked, revealed}
 let revealedCount = 0;
@@ -1319,6 +1326,19 @@ function renderVerse() {
   let wordIdx = 0;
   const wordObjects = [];
 
+  // For "Đầu câu" mode: precompute the index of the first word of each line.
+  // Those stay visible; everything else gets masked.
+  let firstOfLine = null;
+  if (curMode === 'headline') {
+    firstOfLine = new Set();
+    let wIdx = 0;
+    raw.split('\n').forEach(line => {
+      const ws = line.split(/\s+/).filter(t => t);
+      if (ws.length > 0) firstOfLine.add(wIdx);
+      wIdx += ws.length;
+    });
+  }
+
   tokens.forEach(tok => {
     if (/^\s+$/.test(tok)) {
       body.appendChild(document.createTextNode(tok));
@@ -1328,8 +1348,11 @@ function renderVerse() {
     span.className = 'word-token';
     const idx = wordIdx++;
 
-    // Decide if masked
-    const isMaskedBySlider = shouldMaskWord(idx, wordObjects.length, p.weakWords);
+    // Decide if masked. Headline mode overrides the slider: mask everything except
+    // the first word of each line.
+    const isMaskedBySlider = curMode === 'headline'
+      ? !firstOfLine.has(idx)
+      : shouldMaskWord(idx, wordObjects.length, p.weakWords);
     const wObj = { el: span, word: tok, idx, masked: false, revealed: false };
     wordObjects.push(wObj);
     wordTokens.push(wObj);
@@ -1563,7 +1586,7 @@ function setMode(m) {
 }
 
 function updateModeButtons(m) {
-  ['normal','initial','fill'].forEach(k => {
+  ['normal','headline','initial','fill'].forEach(k => {
     const el = document.getElementById('mb-'+k);
     el.classList.toggle('active', k===m);
   });
