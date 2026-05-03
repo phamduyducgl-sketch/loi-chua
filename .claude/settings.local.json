@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed -i.bak '1736,1854d' actor-method.html)",
+      "Bash(sed -n '1733,1738p' actor-method.html)",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(git config *)"
+    ]
+  }
+}

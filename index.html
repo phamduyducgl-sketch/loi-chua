@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lời Chúa — Actor Method</title>
+<!-- PWA: manifest + theme + icons -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#c8a456">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+
+<!-- iOS — make "Add to Home Screen" launch full-screen like a native app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lời Chúa">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS & RESET
+═══════════════════════════════════════════ */
+:root {
+  --bg:        #08090f;
+  --bg2:       #0d0f18;
+  --surface:   #111320;
+  --card:      #161828;
+  --border:    #1e2238;
+  --border2:   #252840;
+
+  --gold:      #c8a456;
+  --gold-l:    #e2c07a;
+  --gold-dim:  rgba(200,164,86,0.12);
+  --gold-glow: rgba(200,164,86,0.06);
+
+  --text:      #dddbd2;
+  --text-2:    #8e8c9a;
+  --text-3:    #3e3d4e;
+
+  --easy:      #52b788;
+  --good:      #4b8ef0;
+  --hard:      #e09c44;
+  --again:     #e05858;
+
+  --mask-bg:      #1a1c2e;
+  --mask-border:  #2a2d46;
+  --mask-hover:   #242640;
+  --mask-reveal:  rgba(82,183,136,0.15);
+
+  --r: 14px;
+  --r-sm: 8px;
+  --shadow: 0 12px 48px rgba(0,0,0,0.7);
+
+  --ambient-1: rgba(200,164,86,0.05);
+  --ambient-2: rgba(75,142,240,0.04);
+}
+
+/* Light theme */
+:root[data-theme="light"] {
+  --bg:        #f7f4ec;
+  --bg2:       #ede9dd;
+  --surface:   #ffffff;
+  --card:      #fbf8f0;
+  --border:    #e0d8c1;
+  --border2:   #c9bf9f;
+
+  --gold:      #8a6a22;
+  --gold-l:    #a07c2f;
+  --gold-dim:  rgba(138,106,34,0.10);
+  --gold-glow: rgba(138,106,34,0.05);
+
+  --text:      #2a2820;
+  --text-2:    #6b6759;
+  --text-3:    #a39d87;
+
+  --easy:      #237a4f;
+  --good:      #2657b0;
+  --hard:      #a96a14;
+  --again:     #b73333;
+
+  --mask-bg:      #ece6d2;
+  --mask-border:  #cdc29c;
+  --mask-hover:   #ddd4ad;
+  --mask-reveal:  rgba(35,122,79,0.18);
+
+  --shadow: 0 8px 28px rgba(80,68,38,0.10);
+  --ambient-1: rgba(138,106,34,0.06);
+  --ambient-2: rgba(38,87,176,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Ambient bg */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 40% at 15% 0%, var(--ambient-1) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 85% 100%, var(--ambient-2) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.app {
+  position: relative; z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px 100px;
+}
+
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
+.app-header {
+  padding: 28px 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.header-brand {
+  display: flex; align-items: center; gap: 12px;
+}
+.brand-icon {
+  width: 36px; height: 36px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(200,164,86,0.3);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+}
+.brand-text h1 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 18px;
+  color: var(--gold-l);
+  line-height: 1.1;
+}
+.brand-text p {
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.header-actions { display: flex; gap: 8px; }
+
+/* ═══════════════════════════════════════════
+   NAV TABS
+═══════════════════════════════════════════ */
+.tabs {
+  display: flex; gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 3px;
+  margin-bottom: 24px;
+}
+.tab {
+  flex: 1; padding: 9px 6px;
+  background: none; border: none;
+  color: var(--text-2); font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.01em;
+}
+.tab.active {
+  background: var(--gold-dim);
+  color: var(--gold-l);
+  border: 1px solid rgba(200,164,86,0.22);
+}
+
+/* ═══════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════ */
+.screen { display: none; }
+.screen.active { display: block; animation: fadeUp 0.28s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ═══════════════════════════════════════════
+   SECTION LABEL
+═══════════════════════════════════════════ */
+.sec-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn {
+  border: none; border-radius: var(--r-sm);
+  padding: 10px 22px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.18s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-gold {
+  background: linear-gradient(135deg, #b8943a, #c8a456);
+  color: #08090f;
+  box-shadow: 0 4px 18px rgba(200,164,86,0.28);
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(200,164,86,0.38); }
+.btn-gold:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  background: var(--card);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+
+/* ═══════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════ */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.stat-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+  text-align: center;
+}
+.stat-val {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 30px;
+  color: var(--gold-l);
+  line-height: 1;
+  margin-bottom: 5px;
+}
+.stat-lbl {
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.due-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.due-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.dbadge {
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+}
+.dbadge.new   { background: rgba(75,142,240,0.15); color: #7aabf8; border: 1px solid rgba(75,142,240,0.25); }
+.dbadge.learn { background: rgba(224,156,68,0.15); color: #e8c97e; border: 1px solid rgba(224,156,68,0.25); }
+.dbadge.rev   { background: rgba(82,183,136,0.15); color: #7ecfaa; border: 1px solid rgba(82,183,136,0.25); }
+
+/* Passage list on dashboard */
+.passage-list { display: flex; flex-direction: column; gap: 8px; }
+.passage-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 18px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.passage-item:hover { border-color: rgba(200,164,86,0.4); background: var(--bg2); }
+.pi-ref {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; color: var(--gold-l);
+  min-width: 120px; white-space: nowrap;
+}
+.pi-preview { font-size: 12px; color: var(--text-2); flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pi-mask {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text-3);
+}
+.mask-dots {
+  display: flex; gap: 3px;
+}
+.mask-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border2);
+}
+.mask-dot.filled { background: var(--gold); }
+.pi-due { font-size: 10px; padding: 3px 8px; border-radius: 8px; white-space: nowrap; font-weight: 700; }
+.pi-due.today { background: rgba(224,88,88,0.15); color: #f08080; }
+.pi-due.soon  { background: rgba(224,156,68,0.12); color: #e8c97e; }
+.pi-due.ok    { background: rgba(82,183,136,0.12); color: #7ecfaa; }
+
+/* ═══════════════════════════════════════════
+   PRACTICE SCREEN — THE MAIN STAGE
+═══════════════════════════════════════════ */
+.practice-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+}
+.prog-wrap {
+  flex: 1; height: 3px;
+  background: var(--border);
+  border-radius: 3px; overflow: hidden;
+}
+.prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-l));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* SRS level badge (replaces the old mask-level-bar) */
+.srs-level {
+  font-size: 10px; font-weight: 700;
+  color: var(--gold);
+  background: var(--gold-dim);
+  border: 1px solid rgba(200,164,86,0.25);
+  border-radius: 5px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+/* Controls row */
+.controls-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.slider-wrap {
+  display: flex; align-items: center; gap: 8px;
+  flex: 1; min-width: 180px;
+}
+.slider-lbl { font-size: 11px; color: var(--text-2); white-space: nowrap; font-weight: 500; }
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 2px 8px rgba(200,164,86,0.4);
+  transition: transform 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.slider-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; color: var(--gold-l);
+  min-width: 32px; text-align: right;
+}
+
+.mode-btns { display: flex; gap: 5px; }
+.mode-btn {
+  padding: 6px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.mode-btn.active { background: var(--gold-dim); color: var(--gold-l); border-color: rgba(200,164,86,0.3); }
+.mode-btn:hover:not(.active) { border-color: var(--border2); color: var(--text); }
+
+/* ─── THE VERSE DISPLAY ─── */
+.verse-stage {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 32px 36px;
+  margin-bottom: 20px;
+  min-height: 180px;
+  position: relative;
+  transition: border-color 0.3s;
+}
+.verse-stage.mode-initial { border-color: rgba(200,164,86,0.2); }
+
+.verse-ref-badge {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+  opacity: 0.8;
+}
+.verse-ref-badge::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(200,164,86,0.2), transparent);
+}
+
+.verse-body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(17px, 3vw, 22px);
+  line-height: 1.85;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  white-space: pre-wrap;        /* preserve newlines for poetry & paragraphs */
+  word-break: break-word;
+}
+
+/* Word tokens */
+.word-token {
+  display: inline;
+  position: relative;
+  cursor: default;
+}
+.word-token .w-visible {
+  color: var(--text);
+  transition: color 0.2s;
+}
+
+/* Masked word */
+.word-token.masked .w-visible { display: none; }
+.word-token.masked .w-blank {
+  display: inline-block;
+  background: var(--mask-bg);
+  border: 1px solid var(--mask-border);
+  border-radius: 5px;
+  height: 1.1em;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  top: -1px;
+}
+.word-token.masked .w-blank:hover {
+  background: var(--mask-hover);
+  border-color: var(--border2);
+}
+.word-token.masked.weak .w-blank {
+  border-color: rgba(224,88,88,0.4);
+  background: rgba(224,88,88,0.07);
+}
+
+/* Revealed (was masked, user clicked) */
+.word-token.revealed .w-visible {
+  color: var(--easy);
+  background: rgba(82,183,136,0.1);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+.word-token.revealed .w-blank { display: none; }
+
+/* Initial-letter mode */
+.word-token.initial-mode .w-visible { display: none; }
+.word-token.initial-mode .w-initial {
+  display: inline;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85em;
+  color: var(--text-2);
+  letter-spacing: 0.06em;
+}
+
+/* Ref-only mode */
+.verse-body.ref-only { filter: blur(6px); user-select: none; transition: filter 0.4s; }
+.verse-body.ref-only.peeking { filter: blur(0); }
+
+/* Fill-in mode */
+.word-token.fill .w-visible { display: none; }
+.word-token.fill .w-blank { display: none; }
+.word-token.fill .w-input {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  padding: 0 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85em;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  vertical-align: middle;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.word-token.fill .w-input::-webkit-search-cancel-button,
+.word-token.fill .w-input::-webkit-search-decoration,
+.word-token.fill .w-input::-webkit-search-results-button,
+.word-token.fill .w-input::-webkit-search-results-decoration { display: none; -webkit-appearance: none; }
+.word-token.fill .w-input:focus { border-color: var(--gold); }
+.word-token.fill.correct .w-input { border-color: var(--easy); background: rgba(82,183,136,0.08); color: var(--easy); }
+.word-token.fill.wrong   .w-input { border-color: var(--again); background: rgba(224,88,88,0.08); color: var(--again); }
+.word-token.fill.hinted  .w-input { border-color: var(--gold); background: var(--gold-dim); color: var(--gold-l); font-style: italic; }
+
+/* Hint: reveal all button */
+.reveal-all-btn {
+  position: absolute;
+  top: 12px; right: 14px;
+  font-size: 11px; color: var(--text-3);
+  background: none; border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: color 0.2s;
+  font-weight: 500;
+}
+.reveal-all-btn:hover { color: var(--text-2); }
+
+/* Stats bar under verse */
+.verse-stats {
+  display: flex; gap: 16px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 11px; color: var(--text-3);
+  flex-wrap: wrap;
+}
+.vstat { display: flex; align-items: center; gap: 5px; }
+.vstat-val { font-weight: 700; color: var(--text-2); font-family: 'DM Mono', monospace; font-size: 12px; }
+.vstat-val.red { color: var(--again); }
+.vstat-val.green { color: var(--easy); }
+
+/* ─── RATING SECTION ─── */
+.rating-section { display: none; }
+.rating-section.visible { display: block; animation: fadeUp 0.25s ease; }
+
+.rating-label {
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--text-3);
+  text-align: center; margin-bottom: 12px;
+  font-weight: 600;
+}
+.rating-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.rat-btn {
+  background: transparent;
+  border: 1px solid;
+  border-radius: 12px;
+  padding: 14px 8px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.18s;
+  text-align: center;
+}
+.rat-lbl { font-size: 11px; font-weight: 700; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+.rat-iv  { font-size: 11px; font-weight: 400; opacity: 0.65; display: block; }
+.rat-icon { font-size: 16px; display: block; margin-bottom: 5px; }
+
+.rat-btn.again { color: var(--again); border-color: rgba(224,88,88,0.3); }
+.rat-btn.again:hover { background: rgba(224,88,88,0.1); border-color: var(--again); }
+.rat-btn.hard  { color: var(--hard);  border-color: rgba(224,156,68,0.3); }
+.rat-btn.hard:hover  { background: rgba(224,156,68,0.1); border-color: var(--hard); }
+.rat-btn.good  { color: var(--good);  border-color: rgba(75,142,240,0.3); }
+.rat-btn.good:hover  { background: rgba(75,142,240,0.1); border-color: var(--good); }
+.rat-btn.easy  { color: var(--easy);  border-color: rgba(82,183,136,0.3); }
+.rat-btn.easy:hover  { background: rgba(82,183,136,0.1); border-color: var(--easy); }
+
+/* Fill-in check button */
+.fill-actions {
+  display: flex; gap: 10px; justify-content: center;
+  margin-bottom: 14px;
+}
+
+/* ═══════════════════════════════════════════
+   LIBRARY SCREEN
+═══════════════════════════════════════════ */
+.lib-toolbar {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.lib-toolbar input {
+  flex: 1; min-width: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.lib-toolbar input:focus { border-color: rgba(200,164,86,0.4); }
+
+.passage-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.passage-card:hover { border-color: var(--border2); }
+.pc-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 18px;
+  cursor: pointer;
+}
+.pc-ref {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; color: var(--gold-l);
+  min-width: 130px;
+}
+.pc-preview { font-size: 12px; color: var(--text-2); flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pc-meta { display: flex; gap: 6px; align-items: center; }
+.pc-state {
+  font-size: 10px; padding: 3px 9px;
+  border-radius: 8px; font-weight: 700; white-space: nowrap;
+}
+.pc-state.new    { background: rgba(75,142,240,0.12); color: #7aabf8; }
+.pc-state.learn  { background: rgba(224,156,68,0.12); color: #e8c97e; }
+.pc-state.review { background: rgba(82,183,136,0.12); color: #7ecfaa; }
+.pc-state.master { background: rgba(200,164,86,0.12); color: var(--gold-l); }
+.pc-state.due    { background: rgba(224,88,88,0.12);  color: #f08080; }
+
+.pc-expand {
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 14px 18px;
+  display: none;
+}
+.pc-expand.open { display: block; }
+.pc-full-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; line-height: 1.85;
+  color: var(--text-2);
+  margin-bottom: 12px;
+}
+.pc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ═══════════════════════════════════════════
+   ADD SCREEN
+═══════════════════════════════════════════ */
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 22px;
+  margin-bottom: 16px;
+}
+.form-row { margin-bottom: 14px; }
+.form-row label {
+  display: block;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-3); margin-bottom: 7px;
+}
+.form-row input,
+.form-row textarea,
+.form-row select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-row textarea { min-height: 110px; resize: vertical; line-height: 1.7; font-size: 15px; font-family: 'DM Sans', sans-serif; }
+.form-row input:focus, .form-row textarea:focus, .form-row select:focus { border-color: rgba(200,164,86,0.45); }
+.form-row select option { background: var(--surface); }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ═══════════════════════════════════════════
+   SETTINGS SCREEN
+═══════════════════════════════════════════ */
+.setting-group { margin-bottom: 24px; }
+.setting-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-item:last-child { border-bottom: none; }
+.si-label { font-size: 14px; color: var(--text); font-weight: 500; }
+.si-desc  { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+.num-inp {
+  width: 68px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 7px;
+  padding: 6px 10px; color: var(--text);
+  font-size: 14px; text-align: center; outline: none;
+}
+.num-inp:focus { border-color: rgba(200,164,86,0.4); }
+.toggle { position: relative; width: 42px; height: 22px; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.tslider { position: absolute; inset: 0; background: var(--border); border-radius: 22px; transition: 0.25s; }
+.tslider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: var(--text-3); border-radius: 50%; transition: 0.25s; }
+.toggle input:checked + .tslider { background: rgba(200,164,86,0.25); border: 1px solid var(--gold); }
+.toggle input:checked + .tslider::before { transform: translateX(20px); background: var(--gold); }
+
+/* ═══════════════════════════════════════════
+   DONE STATE
+═══════════════════════════════════════════ */
+.done-state {
+  text-align: center; padding: 60px 24px;
+  display: none;
+}
+.done-icon { font-size: 52px; margin-bottom: 16px; }
+.done-title { font-family: 'DM Sans', sans-serif; font-size: 22px; color: var(--gold-l); margin-bottom: 8px; }
+.done-sub { font-size: 14px; color: var(--text-2); line-height: 1.7; margin-bottom: 24px; }
+
+/* ═══════════════════════════════════════════
+   TOAST & MODAL
+═══════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(70px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text);
+  z-index: 1000;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+  opacity: 0; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast.ok  { border-color: rgba(82,183,136,0.4); }
+.toast.err { border-color: rgba(224,88,88,0.4); }
+
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 900;
+}
+.modal-bg.open { display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 26px;
+  max-width: 460px; width: 100%;
+  box-shadow: var(--shadow);
+}
+.modal h3 { font-family: 'DM Sans', sans-serif; color: var(--gold-l); margin-bottom: 10px; font-size: 18px; }
+.modal p  { font-size: 13px; color: var(--text-2); line-height: 1.7; margin-bottom: 20px; }
+.modal-acts { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+@media (max-width: 520px) {
+  .dash-stats { grid-template-columns: repeat(2,1fr); }
+  .rating-grid { grid-template-columns: repeat(2,1fr); }
+  .verse-stage { padding: 22px 16px; }
+  .controls-row { flex-direction: column; align-items: stretch; }
+  .mode-btns { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="app-header">
+  <div class="header-brand">
+    <div class="brand-icon">📖</div>
+    <div class="brand-text">
+      <h1>Actor Method</h1>
+      <p>Học thuộc Kinh Thánh</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" id="theme-toggle" onclick="toggleTheme()" title="Đổi giao diện sáng/tối">🌙</button>
+    <button class="btn btn-ghost btn-sm" onclick="switchTab('settings')">⚙</button>
+  </div>
+</header>
+
+<!-- ══════════ TABS ══════════ -->
+<nav class="tabs">
+  <button class="tab active" onclick="switchTab('dashboard')">📊 Tổng quan</button>
+  <button class="tab" onclick="switchTab('practice')">🎭 Luyện tập</button>
+  <button class="tab" onclick="switchTab('library')">📚 Thư viện</button>
+  <button class="tab" onclick="switchTab('add')">✏️ Thêm đoạn</button>
+  <button class="tab" onclick="switchTab('settings')">⚙️ Cài đặt</button>
+</nav>
+
+<!-- ══════════════════════════════════════
+     SCREEN: DASHBOARD
+══════════════════════════════════════ -->
+<section id="screen-dashboard" class="screen active">
+
+  <div class="dash-stats">
+    <div class="stat-box">
+      <div class="stat-val" id="ds-total">0</div>
+      <div class="stat-lbl">Đoạn</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="ds-due">0</div>
+      <div class="stat-lbl">Đến hạn</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="ds-done">0</div>
+      <div class="stat-lbl">Hôm nay</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="ds-streak">0🔥</div>
+      <div class="stat-lbl">Chuỗi ngày</div>
+    </div>
+  </div>
+
+  <div class="due-panel">
+    <div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);margin-bottom:8px;">Hàng chờ luyện tập</div>
+      <div class="due-badges">
+        <span class="dbadge new"  id="db-new">0 Mới</span>
+        <span class="dbadge learn" id="db-learn">0 Đang học</span>
+        <span class="dbadge rev"  id="db-rev">0 Ôn tập</span>
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="startPractice()" id="btn-practice">Bắt đầu luyện tập</button>
+  </div>
+
+  <div class="sec-label">Đoạn sắp đến hạn</div>
+  <div id="dash-list" class="passage-list"></div>
+
+</section>
+
+<!-- ══════════════════════════════════════
+     SCREEN: PRACTICE
+══════════════════════════════════════ -->
+<section id="screen-practice" class="screen">
+
+  <div class="practice-header">
+    <button class="btn btn-ghost btn-sm" onclick="switchTab('dashboard')">← Thoát</button>
+    <div class="prog-wrap">
+      <div class="prog-fill" id="prog-fill" style="width:0%"></div>
+    </div>
+    <span id="prog-text" style="font-size:12px;color:var(--text-3);white-space:nowrap;font-family:'DM Mono',monospace;">0/0</span>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-row">
+    <div class="slider-wrap">
+      <span class="srs-level" id="srs-badge" title="Cấp học SRS của đoạn này">—</span>
+      <span class="slider-lbl">Ẩn:</span>
+      <input type="range" id="mask-slider" min="0" max="100" step="5" value="0" oninput="onSliderChange(this.value)">
+      <span class="slider-val" id="slider-val">0%</span>
+    </div>
+    <div class="mode-btns">
+      <button class="mode-btn active" id="mb-normal"  onclick="setMode('normal')">Thẻ ẩn</button>
+      <button class="mode-btn"        id="mb-initial" onclick="setMode('initial')">Chữ đầu</button>
+      <button class="mode-btn"        id="mb-fill"    onclick="setMode('fill')">Gõ từ</button>
+      <button class="mode-btn"        id="mb-refonly" onclick="setMode('refonly')">Chỉ ref</button>
+    </div>
+  </div>
+
+  <!-- Verse display -->
+  <div class="verse-stage" id="verse-stage">
+    <button class="reveal-all-btn" onclick="revealAll()">Hiện tất cả</button>
+    <div class="verse-ref-badge" id="v-ref">—</div>
+    <div class="verse-body" id="verse-body">
+      Chọn đoạn để bắt đầu luyện tập.
+    </div>
+  </div>
+
+  <!-- Stats under verse -->
+  <div class="verse-stats" id="verse-stats" style="display:none;">
+    <div class="vstat">Tổng từ: <span class="vstat-val" id="vs-total">0</span></div>
+    <div class="vstat">Đang ẩn: <span class="vstat-val" id="vs-hidden">0</span></div>
+    <div class="vstat">Đã lộ: <span class="vstat-val green" id="vs-revealed">0</span></div>
+    <div class="vstat">Từ yếu: <span class="vstat-val red" id="vs-weak">0</span></div>
+  </div>
+
+  <!-- Fill-in actions -->
+  <div class="fill-actions" id="fill-actions" style="display:none;">
+    <button class="btn btn-ghost" onclick="hintFocused()" title="Hiện từ đúng cho ô đang chọn (phím ?)">? Gợi ý</button>
+    <button class="btn btn-ghost" onclick="checkFill()">✓ Kiểm tra</button>
+    <button class="btn btn-ghost" onclick="clearFill()">↺ Xoá</button>
+  </div>
+
+  <!-- Rating -->
+  <div class="rating-section" id="rating-section">
+    <div class="rating-label">Bạn nhớ được bao nhiêu?</div>
+    <div class="rating-grid">
+      <button class="rat-btn again" onclick="rate(1)">
+        <span class="rat-icon">😶</span>
+        <span class="rat-lbl">Quên</span>
+        <span class="rat-iv" id="iv-1">< 1p</span>
+      </button>
+      <button class="rat-btn hard" onclick="rate(2)">
+        <span class="rat-icon">😐</span>
+        <span class="rat-lbl">Mờ</span>
+        <span class="rat-iv" id="iv-2">1 ngày</span>
+      </button>
+      <button class="rat-btn good" onclick="rate(3)">
+        <span class="rat-icon">🙂</span>
+        <span class="rat-lbl">Nhớ</span>
+        <span class="rat-iv" id="iv-3">3 ngày</span>
+      </button>
+      <button class="rat-btn easy" onclick="rate(4)">
+        <span class="rat-icon">😄</span>
+        <span class="rat-lbl">Thuộc</span>
+        <span class="rat-iv" id="iv-4">7 ngày</span>
+      </button>
+    </div>
+    <div style="text-align:center;margin-top:6px;">
+      <button class="btn btn-ghost btn-sm" onclick="showRating(false)">← Xem lại đoạn</button>
+    </div>
+  </div>
+
+  <!-- Done -->
+  <div class="done-state" id="done-state">
+    <div class="done-icon">🕊️</div>
+    <div class="done-title">Phiên luyện tập hoàn thành!</div>
+    <div class="done-sub">Bạn đã ôn tất cả đoạn trong hàng chờ.<br>Hãy quay lại ngày mai để duy trì chuỗi học.</div>
+    <button class="btn btn-gold" onclick="switchTab('dashboard')">Về tổng quan</button>
+  </div>
+
+</section>
+
+<!-- ══════════════════════════════════════
+     SCREEN: LIBRARY
+══════════════════════════════════════ -->
+<section id="screen-library" class="screen">
+  <div class="lib-toolbar">
+    <input type="text" id="lib-search" placeholder="Tìm kiếm đoạn, tham chiếu…" oninput="renderLibrary()">
+    <button class="btn btn-ghost btn-sm" onclick="renderLibrary()">🔍</button>
+  </div>
+  <div id="lib-list"></div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SCREEN: ADD
+══════════════════════════════════════ -->
+<section id="screen-add" class="screen">
+
+  <div class="sec-label">Thêm đoạn Kinh Thánh</div>
+  <div class="form-card">
+    <div class="form-row">
+      <label>Tham chiếu</label>
+      <input type="text" id="add-ref" placeholder="Vd: Thi Thiên 103:1-5  /  Giăng 3:16-17">
+    </div>
+    <div class="form-row">
+      <label>Nội dung đoạn</label>
+      <textarea id="add-text" placeholder="Nhập toàn bộ nội dung đoạn Kinh Thánh…"></textarea>
+    </div>
+    <div class="form-row">
+      <label>Chủ đề / Nhóm</label>
+      <input type="text" id="add-tag" placeholder="Vd: Thi Thiên 103, Cứu rỗi, Tình yêu Chúa…">
+    </div>
+    <div class="form-row">
+      <label>Bản dịch</label>
+      <select id="add-tr">
+        <option>Kinh Thánh 1925</option>
+        <option>Kinh Thánh 2010</option>
+        <option>Bản Truyền Thống Hiệu Đính</option>
+        <option>Khác</option>
+      </select>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="clearAddForm()">Xóa</button>
+      <button class="btn btn-gold" onclick="addPassage()">Thêm đoạn</button>
+    </div>
+  </div>
+
+  <div class="sec-label">Duyệt Kinh Thánh online</div>
+  <div class="form-card">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.7;color:var(--text-2);">
+      Tải đoạn Kinh Thánh từ nguồn online (bản tiếng Việt 1925). Cần kết nối Internet khi duyệt; sau khi thêm vào thư viện, học thuộc vẫn dùng được offline.
+    </div>
+    <div class="form-row">
+      <label>Sách</label>
+      <select id="bb-book"></select>
+    </div>
+    <div class="form-row">
+      <label>Chương</label>
+      <select id="bb-chapter"><option value="">— Chọn sách trước —</option></select>
+    </div>
+    <div class="form-row">
+      <label>Câu</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="number" id="bb-vfrom" min="1" placeholder="Từ" style="width:80px;">
+        <span style="color:var(--text-3);">–</span>
+        <input type="number" id="bb-vto" min="1" placeholder="Đến" style="width:80px;">
+        <span style="font-size:11px;color:var(--text-3);">bỏ trống = cả chương</span>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="previewBibleChapter()">🔍 Tải đoạn</button>
+    </div>
+    <div id="bb-status" style="font-size:12px;color:var(--text-3);margin:10px 0 0 0;min-height:18px;"></div>
+    <div id="bb-preview" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-top:12px;">
+      <div style="font-family:'DM Serif Display',serif;color:var(--gold);font-size:13px;margin-bottom:10px;" id="bb-preview-ref"></div>
+      <div style="font-family:'DM Serif Display',serif;font-size:14px;line-height:1.75;color:var(--text);max-height:280px;overflow-y:auto;" id="bb-preview-text"></div>
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+        <button class="btn btn-gold btn-sm" onclick="addBibleToLibrary()">✅ Thêm vào thư viện</button>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════════════════════════════════════
+     SCREEN: SETTINGS
+══════════════════════════════════════ -->
+<section id="screen-settings" class="screen">
+
+  <div class="form-card">
+    <div class="sec-label">Phiên luyện tập</div>
+    <div class="setting-group">
+      <div class="setting-item">
+        <div><div class="si-label">Đoạn mới mỗi ngày</div><div class="si-desc">Giới hạn đoạn mới để tránh quá tải</div></div>
+        <input type="number" class="num-inp" id="set-new" value="5" min="1" max="20" onchange="saveSettings()">
+      </div>
+      <div class="setting-item">
+        <div><div class="si-label">Tối đa ôn tập / ngày</div><div class="si-desc">Giới hạn tổng số đoạn trong một phiên</div></div>
+        <input type="number" class="num-inp" id="set-max" value="20" min="5" max="100" onchange="saveSettings()">
+      </div>
+    </div>
+
+    <div class="sec-label">Mức ẩn khởi đầu cho đoạn mới</div>
+    <div class="setting-group">
+      <div class="setting-item">
+        <div><div class="si-label">Bắt đầu ở cấp ẩn</div><div class="si-desc">0 = toàn bộ · 5 = chỉ ref</div></div>
+        <input type="number" class="num-inp" id="set-start-mask" value="0" min="0" max="5" onchange="saveSettings()">
+      </div>
+      <div class="setting-item">
+        <div><div class="si-label">Ưu tiên ẩn từ yếu</div><div class="si-desc">Ẩn các từ hay bị quên trước tiên</div></div>
+        <label class="toggle"><input type="checkbox" id="set-weak" checked onchange="saveSettings()"><span class="tslider"></span></label>
+      </div>
+    </div>
+
+    <div class="sec-label">Dữ liệu</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="exportJson()">📤 Xuất JSON</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('imp-json').click()">📥 Nhập JSON</button>
+      <input type="file" id="imp-json" accept=".json" style="display:none" onchange="importJson(event)">
+      <button class="btn btn-ghost btn-sm" style="color:var(--again)" onclick="confirmReset()">🗑️ Xóa tất cả</button>
+    </div>
+  </div>
+
+  <div class="form-card" style="font-size:12px;color:var(--text-2);line-height:2;">
+    <div style="font-family:'DM Sans',sans-serif;font-size:15px;color:var(--gold-l);margin-bottom:8px;">Về ứng dụng</div>
+    <strong style="color:var(--text)">Actor Method</strong> — Học thuộc Kinh Thánh theo phương pháp diễn viên học kịch bản.<br>
+    Kết hợp <strong style="color:var(--gold)">Progressive Masking</strong> (che dần từng từ) và <strong style="color:var(--gold)">SM-2 SRS</strong> theo cấp ẩn.<br>
+    <em>Rating "Thuộc" → cấp ẩn tăng · "Quên" → cấp ẩn giảm · weakWords[] ghi nhớ từ yếu.</em>
+  </div>
+
+</section>
+
+</div><!-- /app -->
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-title">Xác nhận</h3>
+    <p id="modal-body"></p>
+    <div class="modal-acts">
+      <button class="btn btn-ghost" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-gold" id="modal-ok">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─── Constants ───────────────────────────────────────
+const DB_KEY  = 'actor_db_v1';
+const CFG_KEY = 'actor_cfg_v1';
+const THEME_KEY = 'actor_theme_v1';
+
+// ─── Theme ───────────────────────────────────────────
+function setTheme(theme) {
+  const t = (theme === 'light') ? 'light' : 'dark';
+  if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = (t === 'light') ? '☀️' : '🌙';
+  try { localStorage.setItem(THEME_KEY, t); } catch(e) {}
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  setTheme(cur === 'light' ? 'dark' : 'light');
+}
+function loadTheme() {
+  let t = null;
+  try { t = localStorage.getItem(THEME_KEY); } catch(e) {}
+  if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  setTheme(t);
+}
+loadTheme();
+
+const MASK_LEVELS = [0, 25, 50, 75, 100, 100]; // pct of words masked per level (level 4 = initial, 5 = refonly)
+const MASK_LABELS = ['Toàn bộ', 'Ẩn 25%', 'Ẩn 50%', 'Ẩn 75%', 'Chữ đầu', 'Chỉ ref'];
+
+// ─── State ───────────────────────────────────────────
+let db  = { passages: [], reviewedToday: [], lastDate: null, streak: 0, lastStreakDate: null };
+let cfg = { newPerDay: 5, maxReview: 20, startMask: 0, prioritizeWeak: true };
+
+let queue = [], qIdx = 0, qTotal = 0;
+let curPassage = null;         // passage object from db
+let curMode = 'normal';        // normal | initial | fill | refonly
+let curMaskPct = 0;            // slider value 0–100
+let wordTokens = [];           // array of {el, word, idx, masked, revealed}
+let revealedCount = 0;
+
+// ─── DB ──────────────────────────────────────────────
+function loadDB() {
+  try { const r = localStorage.getItem(DB_KEY); if (r) db = {...db, ...JSON.parse(r)}; } catch(e) {}
+  try { const r = localStorage.getItem(CFG_KEY); if (r) cfg = {...cfg, ...JSON.parse(r)}; } catch(e) {}
+  const today = todayStr();
+  if (db.lastDate !== today) { db.reviewedToday = []; db.lastDate = today; saveDB(); }
+}
+function saveDB()  { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function saveCfg() { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function now() { return Date.now(); }
+
+// ─── Passage creation ────────────────────────────────
+function mkPassage(ref, text, tag, tr) {
+  return {
+    id: now() + Math.random(),
+    ref, text, tag: tag||'', translation: tr||'Kinh Thánh 1925',
+    state: 'new',
+    maskLevel: cfg.startMask,  // 0–5
+    interval: 0,
+    repetitions: 0,
+    easeFactor: 2.5,
+    lapses: 0,
+    dueDate: todayStr(),
+    weakWords: [],             // indices of frequently-forgotten words
+    history: [],
+    createdAt: todayStr()
+  };
+}
+
+// ─── SM-2 + maskLevel scheduling ─────────────────────
+function smSchedule(p, quality) {
+  let { interval: iv, repetitions: rp, easeFactor: ef, lapses: lp, maskLevel: ml, weakWords: ww } = p;
+  if (!ef) ef = 2.5;
+  if (!rp) rp = 0;
+  if (!iv) iv = 0;
+  if (!lp) lp = 0;
+  if (!ml) ml = 0;
+  if (!ww) ww = [];
+
+  if (quality === 1) {          // Quên
+    lp++;  rp = 0;
+    iv = 1;
+    ef = Math.max(1.3, ef - 0.2);
+    ml = Math.max(0, ml - 1);  // regress mask level
+    p.state = 'learning';
+  } else {
+    if (quality === 2) ef = Math.max(1.3, ef - 0.15);  // Mờ
+    if (quality === 4) { ef = Math.min(4.0, ef + 0.1); ml = Math.min(5, ml + 1); } // Thuộc → level up
+
+    if (rp === 0)      iv = quality === 4 ? 4 : 1;
+    else if (rp === 1) iv = quality === 4 ? 6 : 3;
+    else               iv = Math.max(1, Math.round(iv * ef * (quality === 4 ? 1.2 : 1)));
+
+    rp++;
+    p.state = iv >= 21 ? 'master' : rp >= 2 ? 'review' : 'learning';
+  }
+
+  p.interval     = iv;
+  p.repetitions  = rp;
+  p.easeFactor   = ef;
+  p.lapses       = lp;
+  p.maskLevel    = ml;
+  p.weakWords    = ww;
+  p.dueDate      = new Date(Date.now() + iv * 86400000).toISOString().slice(0,10);
+  p.history.push({ date: todayStr(), rating: quality, maskLevel: ml });
+  return p;
+}
+
+function ivText(q, p) {
+  const ef = p.easeFactor||2.5, rp = p.repetitions||0, iv = p.interval||0;
+  if (q===1) return '< 1p';
+  let n;
+  if (q===2) n = rp===0?1:rp===1?3:Math.max(1,Math.round(iv*Math.max(1.3,ef-0.15)));
+  else if (q===3) n = rp===0?1:rp===1?3:Math.max(1,Math.round(iv*ef));
+  else n = rp===0?4:rp===1?6:Math.max(1,Math.round(iv*ef*1.2));
+  return n===1?'1 ngày':`${n} ngày`;
+}
+
+// ─── Queue ───────────────────────────────────────────
+function buildQueue() {
+  const today = todayStr();
+  const rid = new Set(db.reviewedToday);
+  const sh = a => a.sort(() => Math.random()-0.5);
+  const newOnes    = sh(db.passages.filter(p => p.state==='new' && !rid.has(p.id))).slice(0, cfg.newPerDay);
+  const learning   = sh(db.passages.filter(p => p.state==='learning' && p.dueDate<=today && !rid.has(p.id)));
+  const reviewing  = sh(db.passages.filter(p => (p.state==='review'||p.state==='master') && p.dueDate<=today && !rid.has(p.id))).slice(0, cfg.maxReview);
+  return [...learning, ...newOnes, ...reviewing];
+}
+function getQueueCounts() {
+  const today = todayStr(), rid = new Set(db.reviewedToday);
+  return {
+    n: db.passages.filter(p=>p.state==='new'&&!rid.has(p.id)).length,
+    l: db.passages.filter(p=>p.state==='learning'&&p.dueDate<=today&&!rid.has(p.id)).length,
+    r: db.passages.filter(p=>(p.state==='review'||p.state==='master')&&p.dueDate<=today&&!rid.has(p.id)).length
+  };
+}
+
+// ─── PRACTICE ────────────────────────────────────────
+function startPractice() {
+  queue = buildQueue(); qIdx = 0; qTotal = queue.length;
+  if (queue.length === 0) { toast('Không có đoạn nào cần luyện hôm nay!'); return; }
+  switchTab('practice');
+  loadPassage();
+}
+
+function loadPassage() {
+  revealedCount = 0; wordTokens = [];
+  showRating(false);
+  document.getElementById('done-state').style.display = 'none';
+  document.getElementById('verse-stage').style.display = 'block';
+  document.getElementById('verse-stats').style.display = 'none';
+  document.getElementById('fill-actions').style.display = 'none';
+
+  if (qIdx >= queue.length) { showDone(); return; }
+
+  curPassage = queue[qIdx];
+  curMode = 'normal';
+  curMaskPct = MASK_LEVELS[Math.min(curPassage.maskLevel, 4)]; // 0,25,50,75,100
+  if (curPassage.maskLevel >= 5) curMode = 'refonly';
+  else if (curPassage.maskLevel >= 4) curMode = 'initial';
+
+  // Sync slider & mode buttons
+  document.getElementById('mask-slider').value = curMaskPct;
+  document.getElementById('slider-val').textContent = curMaskPct + '%';
+  updateModeButtons(curPassage.maskLevel >= 5 ? 'refonly' : curPassage.maskLevel >= 4 ? 'initial' : 'normal');
+  updateMaskLevelBar(curPassage.maskLevel);
+
+  // Progress
+  const done = db.reviewedToday.length;
+  const pct = qTotal > 0 ? (qIdx / qTotal * 100) : 0;
+  document.getElementById('prog-fill').style.width = Math.min(100, pct) + '%';
+  document.getElementById('prog-text').textContent = `${qIdx}/${qTotal}`;
+
+  // Intervals
+  [1,2,3,4].forEach(q => { document.getElementById('iv-'+q).textContent = ivText(q, curPassage); });
+
+  renderVerse();
+}
+
+// ─── Verse rendering ─────────────────────────────────
+function renderVerse() {
+  const p = curPassage;
+  document.getElementById('v-ref').textContent = p.ref;
+
+  const body = document.getElementById('verse-body');
+  body.innerHTML = '';
+  body.className = 'verse-body';
+  wordTokens = [];
+
+  if (curMode === 'refonly') {
+    body.classList.add('ref-only');
+    body.textContent = p.text;
+    document.getElementById('verse-stats').style.display = 'none';
+    document.getElementById('fill-actions').style.display = 'none';
+    // Show rating immediately for ref-only
+    showRating(true);
+    return;
+  }
+
+  // Tokenize text preserving punctuation per word
+  const raw = p.text.trim();
+  const tokens = raw.split(/(\s+)/);
+  let wordIdx = 0;
+  const wordObjects = [];
+
+  tokens.forEach(tok => {
+    if (/^\s+$/.test(tok)) {
+      body.appendChild(document.createTextNode(tok));
+      return;
+    }
+    const span = document.createElement('span');
+    span.className = 'word-token';
+    const idx = wordIdx++;
+
+    // Decide if masked
+    const isMaskedBySlider = shouldMaskWord(idx, wordObjects.length, p.weakWords);
+    const wObj = { el: span, word: tok, idx, masked: false, revealed: false };
+    wordObjects.push(wObj);
+    wordTokens.push(wObj);
+
+    if (curMode === 'initial') {
+      // Show first char + underscores
+      span.classList.add('initial-mode');
+      const vis = document.createElement('span');
+      vis.className = 'w-visible';
+      vis.textContent = tok;
+      const init = document.createElement('span');
+      init.className = 'w-initial';
+      init.textContent = buildInitial(tok);
+      span.appendChild(vis);
+      span.appendChild(init);
+    } else if (curMode === 'fill') {
+      if (isMaskedBySlider) {
+        span.classList.add('fill');
+        wObj.masked = true;
+        const inp = document.createElement('input');
+        inp.type = 'search';
+        inp.className = 'w-input';
+        inp.style.width = Math.max(40, tok.replace(/[.,!?;:]/g,'').length * 12) + 'px';
+        inp.dataset.expected = tok;
+        inp.setAttribute('autocomplete', 'off');
+        inp.setAttribute('name', '_fill_' + Math.random().toString(36).slice(2));
+        inp.setAttribute('autocorrect', 'off');
+        inp.setAttribute('autocapitalize', 'off');
+        inp.setAttribute('spellcheck', 'false');
+        // Block OS / browser suggestion inserts (autocorrect, predictive text, autofill)
+        inp.addEventListener('beforeinput', e => {
+          if (e.inputType === 'insertReplacementText' || e.inputType === 'insertFromDrop') {
+            e.preventDefault();
+          }
+        });
+        // Trailing-space jump (works through IME — keydown can't reliably catch space when
+        // Vietnamese IME consumes it for composition commit; the `input` event fires after
+        // the value has settled, regardless of how the space arrived).
+        inp.addEventListener('input', () => {
+          if (/\s$/.test(inp.value) && inp.value.trim()) {
+            inp.value = inp.value.replace(/\s+$/, '');
+            checkSingleInput(inp);
+            const allInputs = [...document.querySelectorAll('.word-token.fill .w-input')];
+            const i = allInputs.indexOf(inp);
+            if (allInputs[i + 1]) allInputs[i + 1].focus();
+          }
+        });
+        inp.addEventListener('keydown', e => {
+          if (e.isComposing || e.keyCode === 229) return; // let IME handle
+          if (e.key === 'Enter') { checkFill(); return; }
+          if (e.key === '?') {
+            e.preventDefault();
+            hintInput(inp);
+            const allInputs = [...document.querySelectorAll('.word-token.fill .w-input')];
+            const i = allInputs.indexOf(inp);
+            if (allInputs[i + 1]) allInputs[i + 1].focus();
+            return;
+          }
+          // Space jumps to next input just like Tab (each word is one input)
+          if (e.key === 'Tab' || e.key === ' ' || e.code === 'Space') {
+            // For space: only treat as next-jump if input has content; empty + space = let user type space (or noop)
+            if (e.key !== 'Tab' && !inp.value) { e.preventDefault(); return; }
+            e.preventDefault();
+            const typedValue = inp.value;
+            checkSingleInput(inp);
+            const allInputs = [...document.querySelectorAll('.word-token.fill .w-input')];
+            const i = allInputs.indexOf(inp);
+            const next = e.shiftKey ? allInputs[i - 1] : allInputs[i + 1];
+            if (next) {
+              const prevNextValue = next.value;
+              next.focus();
+              // Safety net: if the OS / browser autofills `next` with the value
+              // we just typed in `inp`, revert it. Check across two frames to
+              // catch both sync and async autofill paths.
+              const guard = () => {
+                if (document.activeElement === next &&
+                    next.value !== prevNextValue &&
+                    next.value === typedValue) {
+                  next.value = prevNextValue;
+                }
+              };
+              requestAnimationFrame(() => { guard(); requestAnimationFrame(guard); });
+            }
+          }
+        });
+        inp.addEventListener('blur', () => { if (inp.value) checkSingleInput(inp); });
+        span.appendChild(inp);
+        const vis = document.createElement('span');
+        vis.className = 'w-visible'; vis.textContent = tok; vis.style.display = 'none';
+        span.appendChild(vis);
+      } else {
+        const vis = document.createElement('span');
+        vis.className = 'w-visible'; vis.textContent = tok;
+        span.appendChild(vis);
+      }
+    } else {
+      // normal mode
+      const vis = document.createElement('span');
+      vis.className = 'w-visible'; vis.textContent = tok;
+      const blank = document.createElement('span');
+      blank.className = 'w-blank';
+      blank.style.width = Math.max(32, tok.replace(/[.,!?;:]/g,'').length * 9) + 'px';
+      blank.onclick = () => revealWord(wObj);
+      span.appendChild(vis);
+      span.appendChild(blank);
+
+      if (isMaskedBySlider) {
+        span.classList.add('masked');
+        if (p.weakWords && p.weakWords.includes(idx)) span.classList.add('weak');
+        wObj.masked = true;
+      }
+    }
+
+    body.appendChild(span);
+  });
+
+  updateVerseStats();
+
+  if (curMode === 'fill') {
+    document.getElementById('fill-actions').style.display = 'flex';
+    document.getElementById('verse-stats').style.display = 'flex';
+  } else {
+    document.getElementById('fill-actions').style.display = 'none';
+    document.getElementById('verse-stats').style.display = curMaskPct > 0 ? 'flex' : 'none';
+    if (curMaskPct > 0) showRating(true);
+  }
+}
+
+function shouldMaskWord(wordIdx, totalBefore, weakWords) {
+  if (curMaskPct === 0) return false;
+  if (curMaskPct >= 100) return true;
+  if (cfg.prioritizeWeak && weakWords && weakWords.includes(wordIdx)) return Math.random() < 0.85;
+  return Math.random() < curMaskPct / 100;
+}
+
+function buildInitial(word) {
+  // "Hỡi" → "H__" preserving trailing punctuation
+  const punct = word.match(/[.,!?;:»«"']$/)?.[0] || '';
+  const base = word.slice(0, word.length - punct.length);
+  if (base.length <= 1) return word;
+  return base[0] + '__' + punct;
+}
+
+function revealWord(wObj) {
+  if (wObj.revealed) return;
+  wObj.revealed = true;
+  wObj.el.classList.remove('masked','weak');
+  wObj.el.classList.add('revealed');
+  revealedCount++;
+  // Record as weak word
+  if (curPassage && !curPassage.weakWords.includes(wObj.idx)) {
+    curPassage.weakWords.push(wObj.idx);
+    // Keep only last 10 weak words
+    if (curPassage.weakWords.length > 15) curPassage.weakWords.shift();
+  }
+  updateVerseStats();
+}
+
+function revealAll() {
+  wordTokens.forEach(w => { if (w.masked && !w.revealed) revealWord(w); });
+  if (curMode === 'refonly') {
+    document.getElementById('verse-body').classList.add('peeking');
+  }
+}
+
+function updateVerseStats() {
+  const total = wordTokens.length;
+  const hidden = wordTokens.filter(w => w.masked && !w.revealed).length;
+  const rev = wordTokens.filter(w => w.revealed).length;
+  const weak = curPassage?.weakWords?.length || 0;
+  document.getElementById('vs-total').textContent = total;
+  document.getElementById('vs-hidden').textContent = hidden;
+  document.getElementById('vs-revealed').textContent = rev;
+  document.getElementById('vs-weak').textContent = weak;
+}
+
+function onSliderChange(val) {
+  curMaskPct = +val;
+  document.getElementById('slider-val').textContent = val + '%';
+  renderVerse();
+}
+
+function setMode(m) {
+  curMode = m;
+  updateModeButtons(m);
+  if (m === 'refonly') { curMaskPct = 0; document.getElementById('mask-slider').value = 0; document.getElementById('slider-val').textContent = '0%'; }
+  if (m === 'initial') { curMaskPct = 0; }
+  renderVerse();
+}
+
+function updateModeButtons(m) {
+  ['normal','initial','fill','refonly'].forEach(k => {
+    const el = document.getElementById('mb-'+k);
+    el.classList.toggle('active', k===m);
+  });
+  curMode = m;
+}
+
+function updateMaskLevelBar(level) {
+  const badge = document.getElementById('srs-badge');
+  if (badge) badge.textContent = 'Cấp ' + Math.min(level, 5);
+}
+
+function hintInput(inp) {
+  if (!inp) return;
+  const parent = inp.closest('.word-token');
+  if (!parent || parent.classList.contains('correct')) return;
+  inp.value = inp.dataset.expected;
+  parent.classList.remove('correct', 'wrong');
+  parent.classList.add('hinted', 'wrong');
+  const idx = wordTokens.findIndex(w => w.el === parent);
+  if (idx >= 0 && curPassage && !curPassage.weakWords.includes(idx)) curPassage.weakWords.push(idx);
+  updateVerseStats();
+}
+
+function hintFocused() {
+  const focused = document.activeElement;
+  if (focused && focused.classList.contains('w-input')) {
+    hintInput(focused);
+    const allInputs = [...document.querySelectorAll('.word-token.fill .w-input')];
+    const i = allInputs.indexOf(focused);
+    if (allInputs[i + 1]) allInputs[i + 1].focus();
+  }
+}
+
+// ─── Fill-in check ───────────────────────────────────
+function checkSingleInput(inp) {
+  const expected = inp.dataset.expected.replace(/[.,!?;:»«"']/g,'').toLowerCase().trim();
+  const given    = inp.value.replace(/[.,!?;:»«"']/g,'').toLowerCase().trim();
+  if (!given) return;
+  const parent = inp.closest('.word-token');
+  if (given === expected) {
+    parent.classList.add('correct'); parent.classList.remove('wrong');
+  } else {
+    parent.classList.add('wrong'); parent.classList.remove('correct');
+    const idx = wordTokens.findIndex(w => w.el === parent);
+    if (idx >= 0 && curPassage && !curPassage.weakWords.includes(idx)) curPassage.weakWords.push(idx);
+  }
+  updateVerseStats();
+}
+
+function checkFill() {
+  let correct = 0, wrong = 0;
+  const inputs = document.querySelectorAll('.word-token.fill .w-input');
+  inputs.forEach(inp => {
+    const expected = inp.dataset.expected.replace(/[.,!?;:»«"']/g,'').toLowerCase().trim();
+    const given    = inp.value.replace(/[.,!?;:»«"']/g,'').toLowerCase().trim();
+    const parent   = inp.closest('.word-token');
+    if (given === expected) { parent.classList.add('correct'); parent.classList.remove('wrong'); correct++; }
+    else if (given) { parent.classList.add('wrong'); parent.classList.remove('correct'); wrong++;
+      // Mark as weak
+      const idx = wordTokens.findIndex(w=>w.el===parent);
+      if (idx>=0 && curPassage && !curPassage.weakWords.includes(idx)) curPassage.weakWords.push(idx);
+    }
+  });
+  toast(`✅ Đúng ${correct}  ❌ Sai ${wrong}`, wrong > 0 ? 'err' : 'ok');
+  updateVerseStats();
+  showRating(true);
+}
+
+function clearFill() {
+  document.querySelectorAll('.word-token.fill').forEach(el => {
+    el.classList.remove('correct','wrong');
+    const inp = el.querySelector('.w-input');
+    if (inp) inp.value = '';
+  });
+}
+
+// ─── Rating ──────────────────────────────────────────
+function showRating(show) {
+  document.getElementById('rating-section').classList.toggle('visible', show);
+}
+
+function rate(quality) {
+  if (!curPassage) return;
+  const idx = db.passages.findIndex(p => p.id === curPassage.id);
+  if (idx >= 0) {
+    db.passages[idx] = smSchedule({...db.passages[idx], weakWords: curPassage.weakWords}, quality);
+    db.reviewedToday.push(curPassage.id);
+    updateStreak();
+    saveDB();
+  }
+  qIdx++;
+  setTimeout(loadPassage, 280);
+}
+
+function updateStreak() {
+  const today = todayStr();
+  const yest  = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if (!db.lastStreakDate) { db.streak=1; db.lastStreakDate=today; }
+  else if (db.lastStreakDate===yest) { db.streak++; db.lastStreakDate=today; }
+  else if (db.lastStreakDate!==today) { db.streak=1; db.lastStreakDate=today; }
+}
+
+function showDone() {
+  document.getElementById('verse-stage').style.display = 'none';
+  document.getElementById('verse-stats').style.display = 'none';
+  document.getElementById('fill-actions').style.display = 'none';
+  showRating(false);
+  document.getElementById('done-state').style.display = 'block';
+}
+
+// ─── DASHBOARD ──────────────────────────────────────
+function renderDashboard() {
+  const today = todayStr();
+  document.getElementById('ds-total').textContent  = db.passages.length;
+  document.getElementById('ds-due').textContent    = db.passages.filter(p=>p.dueDate<=today).length;
+  document.getElementById('ds-done').textContent   = db.reviewedToday.length;
+  document.getElementById('ds-streak').textContent = (db.streak||0) + '🔥';
+
+  const {n,l,r} = getQueueCounts();
+  document.getElementById('db-new').textContent   = n + ' Mới';
+  document.getElementById('db-learn').textContent = l + ' Đang học';
+  document.getElementById('db-rev').textContent   = r + ' Ôn tập';
+  document.getElementById('btn-practice').disabled = (n+l+r) === 0;
+
+  const upcoming = db.passages.filter(p=>p.state!=='new')
+    .sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).slice(0,6);
+  const el = document.getElementById('dash-list');
+  if (upcoming.length === 0) {
+    el.innerHTML = `<div style="padding:32px 0;text-align:center;color:var(--text-3);">
+      <div style="font-size:36px;margin-bottom:12px;">📖</div>
+      <div>Chưa có đoạn nào đang học.<br>Vào <strong style="color:var(--text-2)">Thêm đoạn</strong> để bắt đầu!</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = upcoming.map(p => {
+    const due = p.dueDate<=today ? 'today' : (p.dueDate <= new Date(Date.now()+2*86400000).toISOString().slice(0,10) ? 'soon' : 'ok');
+    const duelabel = p.dueDate<=today ? 'Hôm nay' : p.dueDate;
+    const dots = Array.from({length:6}, (_,i) => `<div class="mask-dot${i<=p.maskLevel?' filled':''}"></div>`).join('');
+    return `<div class="passage-item" onclick="practiceOne('${p.id}')">
+      <span class="pi-ref">${p.ref}</span>
+      <span class="pi-preview">${p.text}</span>
+      <span class="pi-mask"><span style="font-size:10px;color:var(--text-3);">Cấp:</span><div class="mask-dots">${dots}</div></span>
+      <span class="pi-due ${due}">${duelabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function practiceOne(id) {
+  const p = db.passages.find(x=>x.id==id);
+  if (!p) return;
+  queue = [p]; qIdx = 0; qTotal = 1;
+  switchTab('practice');
+  loadPassage();
+}
+
+// ─── LIBRARY ────────────────────────────────────────
+function renderLibrary() {
+  const q = (document.getElementById('lib-search')?.value||'').toLowerCase();
+  const today = todayStr();
+  const filtered = db.passages.filter(p =>
+    !q || p.ref.toLowerCase().includes(q) || p.text.toLowerCase().includes(q) || (p.tag||'').toLowerCase().includes(q)
+  );
+  const el = document.getElementById('lib-list');
+  if (filtered.length === 0) {
+    el.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text-3);">Không tìm thấy đoạn nào.</div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(p => {
+    const state = p.dueDate<=today && p.state!=='new' ? 'due' : p.state;
+    const stateLabel = {new:'Mới',learning:'Học',review:'Ôn',master:'Thuộc',due:'Đến hạn'}[state]||state;
+    const dots = Array.from({length:6},(_,i)=>`<div class="mask-dot${i<=p.maskLevel?' filled':''}"></div>`).join('');
+    return `<div class="passage-card">
+      <div class="pc-header" onclick="toggleExpand('pc-${p.id}')">
+        <span class="pc-ref">${p.ref}</span>
+        <span class="pc-preview">${p.text}</span>
+        <span class="pc-meta">
+          <div class="mask-dots" style="gap:3px;">${dots}</div>
+          <span class="pc-state ${state}">${stateLabel}</span>
+        </span>
+      </div>
+      <div class="pc-expand" id="pc-${p.id}">
+        <div class="pc-full-text">${p.text}</div>
+        <div class="pc-actions">
+          <button class="btn btn-gold btn-sm" onclick="practiceOne('${p.id}')">🎭 Luyện tập ngay</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetPassage('${p.id}')">↺ Đặt lại tiến trình</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--again)" onclick="deletePassage('${p.id}')">🗑️ Xóa</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleExpand(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+
+function resetPassage(id) {
+  const idx = db.passages.findIndex(p=>String(p.id)===String(id));
+  if (idx<0) return;
+  db.passages[idx] = {...db.passages[idx], state:'new', maskLevel:cfg.startMask, interval:0, repetitions:0, easeFactor:2.5, lapses:0, weakWords:[], dueDate:todayStr()};
+  saveDB(); renderLibrary(); toast('Đã đặt lại tiến trình');
+}
+
+function deletePassage(id) {
+  showModal('Xóa đoạn này?','Tiến trình học của đoạn này sẽ bị xóa vĩnh viễn.',()=>{
+    db.passages = db.passages.filter(p=>String(p.id)!==String(id));
+    saveDB(); renderLibrary(); toast('Đã xóa đoạn');
+  });
+}
+
+// ─── ADD ────────────────────────────────────────────
+function addPassage() {
+  const ref  = document.getElementById('add-ref').value.trim();
+  const text = document.getElementById('add-text').value.trim();
+  const tag  = document.getElementById('add-tag').value.trim();
+  const tr   = document.getElementById('add-tr').value;
+  if (!ref||!text) { toast('Vui lòng điền tham chiếu và nội dung!','err'); return; }
+  if (db.passages.find(p=>p.ref===ref)) { toast('Đoạn này đã tồn tại!','err'); return; }
+  db.passages.push(mkPassage(ref,text,tag,tr));
+  saveDB(); clearAddForm(); renderDashboard();
+  toast('✅ Đã thêm: ' + ref, 'ok');
+}
+
+function clearAddForm() {
+  ['add-ref','add-text','add-tag'].forEach(id=>document.getElementById(id).value='');
+}
+
+// ─── SETTINGS ───────────────────────────────────────
+function saveSettings() {
+  cfg.newPerDay       = +document.getElementById('set-new').value;
+  cfg.maxReview       = +document.getElementById('set-max').value;
+  cfg.startMask       = +document.getElementById('set-start-mask').value;
+  cfg.prioritizeWeak  = document.getElementById('set-weak').checked;
+  saveCfg();
+  toast('Đã lưu cài đặt');
+}
+
+function applySettings() {
+  document.getElementById('set-new').value        = cfg.newPerDay;
+  document.getElementById('set-max').value        = cfg.maxReview;
+  document.getElementById('set-start-mask').value = cfg.startMask;
+  document.getElementById('set-weak').checked     = cfg.prioritizeWeak;
+}
+
+// ─── EXPORT / IMPORT ────────────────────────────────
+function exportJson() {
+  const json = JSON.stringify(db, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json],{type:'application/json'}));
+  a.download = 'actor_method_backup_' + todayStr() + '.json';
+  a.click();
+}
+
+function importJson(e) {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      db = {...db, ...data};
+      saveDB(); renderDashboard(); renderLibrary();
+      toast('✅ Đã nhập dữ liệu', 'ok');
+    } catch { toast('❌ File không hợp lệ', 'err'); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+}
+
+function confirmReset() {
+  showModal('Xóa toàn bộ dữ liệu?', 'Tất cả đoạn và tiến trình học sẽ bị xóa vĩnh viễn. Không thể hoàn tác!', () => {
+    db = { passages:[], reviewedToday:[], lastDate:todayStr(), streak:0, lastStreakDate:null };
+    saveDB(); renderDashboard(); renderLibrary();
+    toast('Đã xóa tất cả dữ liệu');
+  });
+}
+
+// ─── UI HELPERS ─────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  const tabs = ['dashboard','practice','library','add','settings'];
+  const i = tabs.indexOf(name);
+  if (i>=0) document.querySelectorAll('.tab')[i].classList.add('active');
+  if (name==='dashboard') renderDashboard();
+  if (name==='library')   renderLibrary();
+  if (name==='settings')  applySettings();
+}
+
+let toastTimer;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+let modalCb;
+function showModal(title, body, cb) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent  = body;
+  document.getElementById('modal-bg').classList.add('open');
+  modalCb = cb;
+  document.getElementById('modal-ok').onclick = ()=>{ closeModal(); if(modalCb) modalCb(); };
+}
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+
+// ─── BIBLE BROWSER ────────────────────────────────────
+const BIBLE_BOOKS = [
+  {id: 1,  name: 'Sáng Thế Ký',                ch: 50},
+  {id: 2,  name: 'Xuất Ê-díp-tô Ký',           ch: 40},
+  {id: 3,  name: 'Lê-vi Ký',                   ch: 27},
+  {id: 4,  name: 'Dân Số Ký',                  ch: 36},
+  {id: 5,  name: 'Phục Truyền Luật Lệ Ký',     ch: 34},
+  {id: 6,  name: 'Giô-suê',                    ch: 24},
+  {id: 7,  name: 'Các Quan Xét',               ch: 21},
+  {id: 8,  name: 'Ru-tơ',                      ch:  4},
+  {id: 9,  name: '1 Sa-mu-ên',                 ch: 31},
+  {id: 10, name: '2 Sa-mu-ên',                 ch: 24},
+  {id: 11, name: '1 Các Vua',                  ch: 22},
+  {id: 12, name: '2 Các Vua',                  ch: 25},
+  {id: 13, name: '1 Sử Ký',                    ch: 29},
+  {id: 14, name: '2 Sử Ký',                    ch: 36},
+  {id: 15, name: 'E-xơ-ra',                    ch: 10},
+  {id: 16, name: 'Nê-hê-mi',                   ch: 13},
+  {id: 17, name: 'Ê-xơ-tê',                    ch: 10},
+  {id: 18, name: 'Gióp',                       ch: 42},
+  {id: 19, name: 'Thi Thiên',                  ch:150},
+  {id: 20, name: 'Châm Ngôn',                  ch: 31},
+  {id: 21, name: 'Truyền Đạo',                 ch: 12},
+  {id: 22, name: 'Nhã Ca',                     ch:  8},
+  {id: 23, name: 'Ê-sai',                      ch: 66},
+  {id: 24, name: 'Giê-rê-mi',                  ch: 52},
+  {id: 25, name: 'Ca Thương',                  ch:  5},
+  {id: 26, name: 'Ê-xê-chi-ên',                ch: 48},
+  {id: 27, name: 'Đa-ni-ên',                   ch: 12},
+  {id: 28, name: 'Ô-sê',                       ch: 14},
+  {id: 29, name: 'Giô-ên',                     ch:  3},
+  {id: 30, name: 'A-mốt',                      ch:  9},
+  {id: 31, name: 'Áp-đia',                     ch:  1},
+  {id: 32, name: 'Giô-na',                     ch:  4},
+  {id: 33, name: 'Mi-chê',                     ch:  7},
+  {id: 34, name: 'Na-hum',                     ch:  3},
+  {id: 35, name: 'Ha-ba-cúc',                  ch:  3},
+  {id: 36, name: 'Sô-phô-ni',                  ch:  3},
+  {id: 37, name: 'A-ghê',                      ch:  2},
+  {id: 38, name: 'Xa-cha-ri',                  ch: 14},
+  {id: 39, name: 'Ma-la-chi',                  ch:  4},
+  {id: 40, name: 'Ma-thi-ơ',                   ch: 28},
+  {id: 41, name: 'Mác',                        ch: 16},
+  {id: 42, name: 'Lu-ca',                      ch: 24},
+  {id: 43, name: 'Giăng',                      ch: 21},
+  {id: 44, name: 'Công Vụ Các Sứ Đồ',          ch: 28},
+  {id: 45, name: 'Rô-ma',                      ch: 16},
+  {id: 46, name: '1 Cô-rinh-tô',               ch: 16},
+  {id: 47, name: '2 Cô-rinh-tô',               ch: 13},
+  {id: 48, name: 'Ga-la-ti',                   ch:  6},
+  {id: 49, name: 'Ê-phê-sô',                   ch:  6},
+  {id: 50, name: 'Phi-líp',                    ch:  4},
+  {id: 51, name: 'Cô-lô-se',                   ch:  4},
+  {id: 52, name: '1 Tê-sa-lô-ni-ca',           ch:  5},
+  {id: 53, name: '2 Tê-sa-lô-ni-ca',           ch:  3},
+  {id: 54, name: '1 Ti-mô-thê',                ch:  6},
+  {id: 55, name: '2 Ti-mô-thê',                ch:  4},
+  {id: 56, name: 'Tít',                        ch:  3},
+  {id: 57, name: 'Phi-lê-môn',                 ch:  1},
+  {id: 58, name: 'Hê-bơ-rơ',                   ch: 13},
+  {id: 59, name: 'Gia-cơ',                     ch:  5},
+  {id: 60, name: '1 Phi-e-rơ',                 ch:  5},
+  {id: 61, name: '2 Phi-e-rơ',                 ch:  3},
+  {id: 62, name: '1 Giăng',                    ch:  5},
+  {id: 63, name: '2 Giăng',                    ch:  1},
+  {id: 64, name: '3 Giăng',                    ch:  1},
+  {id: 65, name: 'Giu-đe',                     ch:  1},
+  {id: 66, name: 'Khải Huyền',                 ch: 22},
+];
+
+let bbCurrentData = null;
+
+function initBibleBrowser() {
+  const bookSel = document.getElementById('bb-book');
+  if (!bookSel || bookSel.dataset.inited) return;
+  bookSel.innerHTML = '<option value="">— Chọn sách —</option>' +
+    BIBLE_BOOKS.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  bookSel.addEventListener('change', onBibleBookChange);
+  bookSel.dataset.inited = '1';
+}
+
+function onBibleBookChange() {
+  const bookId = +document.getElementById('bb-book').value;
+  const chSel  = document.getElementById('bb-chapter');
+  const book   = BIBLE_BOOKS.find(b => b.id === bookId);
+  if (!book) { chSel.innerHTML = '<option value="">— Chọn sách trước —</option>'; return; }
+  let html = '<option value="">— Chọn chương —</option>';
+  for (let i = 1; i <= book.ch; i++) html += `<option value="${i}">${i}</option>`;
+  chSel.innerHTML = html;
+  document.getElementById('bb-preview').style.display = 'none';
+  bbCurrentData = null;
+}
+
+async function previewBibleChapter() {
+  const bookId  = +document.getElementById('bb-book').value;
+  const chapter = +document.getElementById('bb-chapter').value;
+  const status  = document.getElementById('bb-status');
+  if (!bookId || !chapter) {
+    status.textContent = '⚠ Hãy chọn sách và chương';
+    status.style.color = 'var(--hard)';
+    return;
+  }
+  status.textContent = '⏳ Đang tải dữ liệu...';
+  status.style.color = 'var(--text-3)';
+  try {
+    // Try multiple sources in order. Each entry returns array of {verse, text} on success.
+    const sources = [
+      // getbible.net v2 — Vietnamese 1934 (Kinh Thánh Truyền Thống, gần với 1925)
+      async () => {
+        const r = await fetch(`https://api.getbible.net/v2/vietnamese/${bookId}/${chapter}.json`);
+        if (!r.ok) throw new Error(`getbible HTTP ${r.status}`);
+        const j = await r.json();
+        const arr = j && j.verses ? j.verses : (Array.isArray(j) ? j : null);
+        if (!arr || arr.length === 0) throw new Error('getbible empty');
+        return arr.map(v => ({ verse: +v.verse, text: v.text }));
+      },
+      // bolls.life — try common Vietnamese translation codes
+      ...['VBPT', 'VIET', 'VIE', 'VKT', 'VI1925'].map(code => async () => {
+        const r = await fetch(`https://bolls.life/get-text/${code}/${bookId}/${chapter}/`);
+        if (!r.ok) throw new Error(`bolls(${code}) HTTP ${r.status}`);
+        const arr = await r.json();
+        if (!Array.isArray(arr) || arr.length === 0) throw new Error(`bolls(${code}) empty`);
+        return arr.map(v => ({ verse: +v.verse, text: v.text }));
+      }),
+    ];
+
+    let verses = null, lastErr = null;
+    for (const fn of sources) {
+      try { verses = await fn(); break; } catch (e) { lastErr = e; }
+    }
+    if (!verses) throw new Error(lastErr ? lastErr.message : 'Tất cả các nguồn đều thất bại');
+
+    verses.sort((a, b) => a.verse - b.verse);
+    const minV = verses[0].verse, maxV = verses[verses.length - 1].verse;
+    const vfrom = +document.getElementById('bb-vfrom').value || minV;
+    const vto   = +document.getElementById('bb-vto').value   || maxV;
+    if (vfrom > vto) throw new Error('"Câu từ" lớn hơn "Câu đến"');
+    const filtered = verses.filter(v => v.verse >= vfrom && v.verse <= vto);
+    if (filtered.length === 0) throw new Error(`Không có câu trong khoảng ${vfrom}-${vto}`);
+
+    const stripHtml = t => (t || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    // Join verses with newline so poetry / verse structure is preserved in practice view.
+    // Books that are poetry (Psalms, Proverbs, Job, Song of Solomon, Lamentations, the prophets) keep one verse per line.
+    const text = filtered.map(v => stripHtml(v.text)).join('\n');
+    const book = BIBLE_BOOKS.find(b => b.id === bookId);
+    const isWhole = (vfrom === minV && vto === maxV);
+    const refSuffix = isWhole ? '' : (vfrom === vto ? `:${vfrom}` : `:${vfrom}-${vto}`);
+    const ref = `${book.name} ${chapter}${refSuffix}`;
+    const tag = `${book.name} ${chapter}`;
+
+    bbCurrentData = { ref, text, tag };
+    document.getElementById('bb-preview-ref').textContent = ref;
+    document.getElementById('bb-preview-text').textContent = text;
+    document.getElementById('bb-preview').style.display = 'block';
+    status.textContent = `✓ Đã tải ${filtered.length} câu`;
+    status.style.color = 'var(--easy)';
+  } catch (e) {
+    status.textContent = `✗ Lỗi: ${e.message}. Kiểm tra Internet hoặc thử lại.`;
+    status.style.color = 'var(--again)';
+    bbCurrentData = null;
+    document.getElementById('bb-preview').style.display = 'none';
+  }
+}
+
+function addBibleToLibrary() {
+  if (!bbCurrentData) return;
+  const { ref, text, tag } = bbCurrentData;
+  if (db.passages.find(p => p.ref === ref)) {
+    toast(`Đoạn "${ref}" đã có trong thư viện`, 'err');
+    return;
+  }
+  db.passages.push(mkPassage(ref, text, tag, 'Kinh Thánh 1925'));
+  saveDB();
+  renderDashboard();
+  renderLibrary();
+  toast(`✅ Đã thêm: ${ref}`, 'ok');
+  document.getElementById('bb-preview').style.display = 'none';
+  bbCurrentData = null;
+}
+
+// ─── INIT ────────────────────────────────────────────
+loadDB();
+renderDashboard();
+initBibleBrowser();
+
+// ─── PWA: register service worker (only when served over http/https; file:// is skipped) ───
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(err => {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>

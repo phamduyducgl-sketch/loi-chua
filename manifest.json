@@ -1,0 +1,21 @@
+{
+  "name": "Lời Chúa — Học Thuộc Kinh Thánh",
+  "short_name": "Lời Chúa",
+  "description": "App học thuộc Kinh Thánh theo phương pháp Actor Method, hỗ trợ tiếng Việt với các chế độ Thẻ ẩn, Chữ đầu, Gõ từ.",
+  "lang": "vi",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08090f",
+  "theme_color": "#c8a456",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
