@@ -127,6 +127,7 @@ Phần lớn từ trở thành **ô input**, bạn gõ trực tiếp. Phím tắ
 |---|---|
 | Click vào thẻ ẩn | Lật ra xem từ |
 | Nút **Hiện tất cả** (góc trên-phải) | Lật toàn bộ; nhấn lần 2 thành **Ẩn tất cả** để ẩn lại |
+| Nút **▶ Đọc to** (góc trên-trái) | Đọc to đoạn Kinh Thánh; từ đang được đọc sẽ được tô vàng. Có select chỉnh tốc độ 0.7x – 1.3x. Nhấn lần 2 để dừng |
 | Slider **Mức độ ẩn** | Chỉnh % từ bị ẩn ngay tức thì |
 | 4 nút mode | Chuyển chế độ Thẻ ẩn / Đầu câu / Chữ đầu / Gõ từ |
 
