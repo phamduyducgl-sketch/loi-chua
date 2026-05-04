@@ -176,3 +176,12 @@ Phương pháp đặt tên theo cách **diễn viên học thuộc kịch bản*
 4. SRS sẽ tự sắp xếp đoạn ôn vào lúc bạn **sắp quên** — đó là điểm vàng của ghi nhớ dài hạn
 
 > _"Hỡi linh hồn ta, khá ngợi khen Đức Giê-hô-va!"_ — Thi Thiên 103:1
+
+---
+
+## 📬 Liên hệ tác giả
+
+**Phạm Duy Đức**
+✉️ [Phamduyducgl@gmail.com](mailto:Phamduyducgl@gmail.com)
+
+Mọi góp ý, báo lỗi, hoặc đề xuất tính năng — xin liên hệ qua email trên.
