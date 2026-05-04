@@ -2,7 +2,7 @@
 // Strategy: cache-first for app shell; network-first (no cache) for Bible API.
 // Bump CACHE_VERSION whenever you ship updates so users get the new build.
 
-const CACHE_VERSION = 'loi-chua-v4';
+const CACHE_VERSION = 'loi-chua-v5';
 const APP_SHELL = [
   './',
   './index.html',
