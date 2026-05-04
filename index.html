@@ -582,6 +582,11 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   border-radius: 5px; padding: 5px 4px;
   cursor: pointer;
 }
+#tts-voice {
+  font-family: 'DM Sans', sans-serif;
+  max-width: 130px;
+  font-size: 11px;
+}
 @media (max-width: 540px) {
   .audio-bar { top: 12px; left: 12px; }
   .audio-bar button { font-size: 12px; padding: 5px 8px; }
@@ -942,6 +947,9 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   <!-- Floating TTS audio bar — pinned top-left of viewport -->
   <div class="audio-bar" id="audio-bar">
     <button id="tts-btn" onclick="toggleTTS()" title="Đọc to đoạn Kinh Thánh">▶ Đọc to</button>
+    <select id="tts-voice" title="Chọn giọng đọc" onchange="setTTSVoice(this.value)">
+      <option value="">Tự động</option>
+    </select>
     <select id="tts-rate" title="Tốc độ đọc" onchange="setTTSRate(this.value)">
       <option value="0.7">0.7x</option>
       <option value="0.85" selected>0.85x</option>
@@ -1355,6 +1363,7 @@ function loadPassage() {
 
   if (qIdx >= queue.length) { showDone(); return; }
   showAudioBar(true);
+  populateVoiceSelect();
 
   curPassage = queue[qIdx];
   curMode = 'normal';
@@ -1849,11 +1858,67 @@ function clearFill() {
 
 // ─── TTS (text-to-speech) ─────────────────────────────
 let ttsPlaying = false;
-let ttsRate = 0.85;
+let ttsRate    = 0.85;
+let ttsVoiceName = ''; // '' = auto
+
+// Voices ranked by quality (first match wins)
+const TTS_PREFERRED = [
+  'Linh',               // Apple Neural (macOS 14+, iOS 17+) — best
+  'Google Tiếng Việt',  // Chrome on Windows/Android — very good
+  'Nam',                // Alternative Apple voice
+];
+
+function getViVoices() {
+  return window.speechSynthesis.getVoices()
+    .filter(v => v.lang && v.lang.toLowerCase().startsWith('vi'));
+}
+
+function pickBestViVoice() {
+  const voices = getViVoices();
+  if (!voices.length) return null;
+  // 1. User-selected
+  if (ttsVoiceName) {
+    const sel = voices.find(v => v.name === ttsVoiceName);
+    if (sel) return sel;
+  }
+  // 2. Preferred list
+  for (const pref of TTS_PREFERRED) {
+    const found = voices.find(v => v.name.includes(pref));
+    if (found) return found;
+  }
+  // 3. Remote (network) voices tend to be higher quality
+  const remote = voices.find(v => !v.localService);
+  if (remote) return remote;
+  // 4. Fallback: first vi voice
+  return voices[0];
+}
+
+function populateVoiceSelect() {
+  const sel = document.getElementById('tts-voice');
+  if (!sel) return;
+  const voices = getViVoices();
+  // Rebuild options
+  sel.innerHTML = '<option value="">Tự động</option>';
+  voices.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.name;
+    // Label: show (★) for preferred voices
+    const star = TTS_PREFERRED.some(p => v.name.includes(p)) ? '★ ' : '';
+    opt.textContent = star + v.name;
+    if (v.name === ttsVoiceName) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // Hide selector if only 0-1 voices (no choice to make)
+  sel.style.display = voices.length > 1 ? '' : 'none';
+}
+
+function setTTSVoice(name) {
+  ttsVoiceName = name;
+  if (ttsPlaying) { stopTTS(); playTTS(); }
+}
 
 function setTTSRate(r) {
   ttsRate = +r || 0.85;
-  // If currently playing, restart with new rate
   if (ttsPlaying) { stopTTS(); playTTS(); }
 }
 
@@ -1874,10 +1939,8 @@ function playTTS() {
   u.lang = 'vi-VN';
   u.rate = ttsRate;
 
-  // Pick a Vietnamese voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const viVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('vi'));
-  if (viVoice) u.voice = viVoice;
+  const voice = pickBestViVoice();
+  if (voice) u.voice = voice;
 
   u.onboundary = (e) => {
     if (e.name && e.name !== 'word') return;
@@ -1936,7 +1999,12 @@ function clearTTSHighlight() {
 // Preload voices (some browsers populate them async)
 if ('speechSynthesis' in window) {
   window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices(); // warm cache
+    populateVoiceSelect();
+  };
+  // Populate immediately in case voices are already loaded (Safari)
+  setTimeout(populateVoiceSelect, 300);
 }
 
 // ─── Rating ──────────────────────────────────────────
