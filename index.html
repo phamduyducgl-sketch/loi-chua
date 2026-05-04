@@ -1339,6 +1339,15 @@ function renderVerse() {
     });
   }
 
+  // Pre-compute mask plan for modes that use slider-based masking.
+  // The plan respects stopwords (never masked) and compound/proper-noun groups
+  // (masked together so users can't trivially infer half a compound).
+  let maskPlan = null;
+  if (curMode === 'normal' || curMode === 'fill') {
+    const wordList = tokens.filter(t => !/^\s+$/.test(t));
+    maskPlan = buildMaskPlan(wordList, p);
+  }
+
   tokens.forEach(tok => {
     if (/^\s+$/.test(tok)) {
       body.appendChild(document.createTextNode(tok));
@@ -1348,11 +1357,11 @@ function renderVerse() {
     span.className = 'word-token';
     const idx = wordIdx++;
 
-    // Decide if masked. Headline mode overrides the slider: mask everything except
-    // the first word of each line.
-    const isMaskedBySlider = curMode === 'headline'
-      ? !firstOfLine.has(idx)
-      : shouldMaskWord(idx, wordObjects.length, p.weakWords);
+    // Decide if masked. Each mode picks its own logic.
+    let isMaskedBySlider;
+    if (curMode === 'headline')        isMaskedBySlider = !firstOfLine.has(idx);
+    else if (maskPlan)                 isMaskedBySlider = maskPlan[idx];
+    else                               isMaskedBySlider = shouldMaskWord(idx, wordObjects.length, p.weakWords);
     const wObj = { el: span, word: tok, idx, masked: false, revealed: false };
     wordObjects.push(wObj);
     wordTokens.push(wObj);
@@ -1486,6 +1495,109 @@ function shouldMaskWord(wordIdx, totalBefore, weakWords) {
   if (curMaskPct >= 100) return true;
   if (cfg.prioritizeWeak && weakWords && weakWords.includes(wordIdx)) return Math.random() < 0.85;
   return Math.random() < curMaskPct / 100;
+}
+
+// Vietnamese function words that we never mask — they're trivial fillers
+// that don't help memorisation (conjunctions, prepositions, particles, pronouns).
+const STOPWORDS = new Set([
+  // Liên từ
+  'và','hoặc','nhưng','mà','song','vì','bởi','do','nếu','hễ','thì','là','rằng',
+  'tuy','dù','dẫu','khi','lúc','nên','tức',
+  // Giới từ
+  'của','ở','từ','đến','tới','trong','ngoài','trên','dưới','giữa','bên','qua',
+  'theo','về','bằng','với','cùng','cho','để','tại','như','sang','vào','ra','tận',
+  // Trợ từ / phụ từ
+  'đã','đang','sẽ','được','bị','không','chẳng','chưa','hãy','đừng','chớ',
+  'cũng','lại','vẫn','còn','mới','rất','quá','thật','luôn','hơn','rồi','hằng',
+  'chỉ','mỗi','cả','hay','khác',
+  // Đại từ chỉ định / nghi vấn
+  'này','kia','ấy','đó','đây','nào','sao','gì','thế','vậy',
+  // Đại từ nhân xưng phổ biến
+  'ta','tôi','ngươi','người','họ','chúng','mình','ai','y',
+  // Cảm từ
+  'ơi',
+]);
+
+// Common Vietnamese compounds (mostly Bible-context). Stored as space-joined
+// lowercase keys for prefix lookup. When ANY part of a compound would be
+// masked, the whole compound is masked together — never just one half (which
+// would be trivially guessable).
+// Hyphenated words like "Giê-hô-va", "Ê-díp-tô", "Y-sơ-ra-ên", "Môi-se" are
+// single whitespace-separated tokens already, so they don't need to be here.
+const COMPOUND_SET = new Set([
+  // 2-word
+  'linh hồn','tâm hồn','ngợi khen','ca tụng','tôn vinh',
+  'nhân từ','nhân lành','nhân ái',
+  'thương xót','thương yêu','yêu thương','yêu mến',
+  'công bình','công việc','công lao','công nghĩa',
+  'ân huệ','ân điển','ân tình',
+  'tội ác','tội lỗi','gian ác','vi phạm','tha thứ','tha tội',
+  'bệnh tật','đau khổ','mạng sống','sự sống','hư nát','hư mất',
+  'mão triều','nóng giận','kính sợ','kính trọng',
+  'cứu chuộc','cứu rỗi','cứu vớt',
+  'danh thánh','danh hiệu',
+  'từng trời','thiên sứ','thiên đàng','cơ binh',
+  'giao ước','giềng mối','luật pháp','mệnh lệnh','mạng lịnh',
+  'hà hiếp','áp bức','ý chỉ','ý muốn','ý định','tôi tớ','đầy tớ',
+  'sanh trưởng','bụi đất','nắn nên','cây cỏ','bông hoa','hoa quả','hoa trái',
+  'phương đông','phương tây','phương nam','phương bắc',
+  'ngay thẳng','ngay lành','vật ngon','phụng hoàng',
+  'mặt đất','mặt trời','mặt trăng','ngôi vua','ngai vàng',
+  'cha mẹ','con cái','chốn hư',
+  'lương tâm','chân lý','hiền lành','hiền hậu',
+  'hằng có','luôn luôn','đời đời',
+]);
+
+function _norm(w) { return (w || '').toLowerCase().replace(/[.,!?;:»«"'…]/g, '').trim(); }
+function _isCap(w) {
+  if (!w) return false;
+  const c = w.charAt(0);
+  return c === c.toUpperCase() && c !== c.toLowerCase();
+}
+
+// Build per-word mask decisions that respect:
+//   - stopwords are never masked
+//   - compound words & proper-noun phrases are masked AS A WHOLE or not at all
+function buildMaskPlan(words, p) {
+  const N = words.length;
+  const wlow = words.map(_norm);
+  const groupOf = new Array(N);
+  const groupMembers = [];
+
+  let i = 0;
+  while (i < N) {
+    let end = i;
+    let matched = false;
+
+    // Try compound dictionary (longest first up to 4 syllables)
+    if (!STOPWORDS.has(wlow[i])) {
+      for (let len = 4; len >= 2 && !matched; len--) {
+        if (i + len > N) continue;
+        const key = wlow.slice(i, i + len).join(' ');
+        if (COMPOUND_SET.has(key)) { end = i + len - 1; matched = true; }
+      }
+    }
+
+    // Capitalized chain (proper noun phrase like "Đức Chúa Trời")
+    if (!matched && _isCap(words[i]) && !STOPWORDS.has(wlow[i])) {
+      while (end + 1 < N && _isCap(words[end + 1]) && !STOPWORDS.has(wlow[end + 1])) end++;
+    }
+
+    const grpId = groupMembers.length;
+    const members = [];
+    for (let k = i; k <= end; k++) { groupOf[k] = grpId; members.push(k); }
+    groupMembers.push(members);
+    i = end + 1;
+  }
+
+  // Decide mask per group (single random call → all members share decision)
+  const groupMasked = groupMembers.map(members => {
+    // Singleton stopword group → never masked
+    if (members.length === 1 && STOPWORDS.has(wlow[members[0]])) return false;
+    return shouldMaskWord(members[0], 0, p.weakWords);
+  });
+
+  return words.map((_, k) => groupMasked[groupOf[k]]);
 }
 
 function buildInitial(word) {
