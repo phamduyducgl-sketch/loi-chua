@@ -1235,6 +1235,21 @@ loadTheme();
 const MASK_LEVELS = [0, 25, 50, 75, 100]; // pct of words masked per level (level 4 = initial)
 const MASK_LABELS = ['Toàn bộ', 'Ẩn 25%', 'Ẩn 50%', 'Ẩn 75%', 'Chữ đầu'];
 
+// Random % range per level for Thẻ ẩn mode [min, max]
+const MASK_RAND = [
+  [15, 40],  // level 0 — mới học, ẩn vừa phải
+  [20, 50],  // level 1
+  [35, 65],  // level 2
+  [50, 80],  // level 3
+  [70, 100], // level 4
+];
+
+function randomMaskPct(ml) {
+  const [lo, hi] = MASK_RAND[Math.min(ml, 4)];
+  // Round to nearest 5 for cleaner slider display
+  return Math.round((lo + Math.random() * (hi - lo)) / 5) * 5;
+}
+
 // ─── State ───────────────────────────────────────────
 let db  = { passages: [], reviewedToday: [], lastDate: null, streak: 0, lastStreakDate: null };
 let cfg = { newPerDay: 5, maxReview: 20, startMask: 0, prioritizeWeak: true };
@@ -1368,7 +1383,8 @@ function loadPassage() {
   curPassage = queue[qIdx];
   curMode = 'normal';
   const ml = Math.min(curPassage.maskLevel, 4);
-  curMaskPct = MASK_LEVELS[ml]; // 0,25,50,75,100
+  // Thẻ ẩn: pick a random % within the range for this level
+  curMaskPct = (ml >= 4) ? 0 : randomMaskPct(ml);
   if (ml >= 4) curMode = 'initial';
 
   // Sync slider & mode buttons
@@ -1774,7 +1790,15 @@ function onSliderChange(val) {
 function setMode(m) {
   curMode = m;
   updateModeButtons(m);
-  if (m === 'initial') { curMaskPct = 0; }
+  if (m === 'initial') {
+    curMaskPct = 0;
+  } else if (m === 'normal' && curPassage) {
+    // Re-roll random % when switching back to Thẻ ẩn
+    const ml = Math.min(curPassage.maskLevel, 4);
+    curMaskPct = randomMaskPct(ml);
+    document.getElementById('mask-slider').value = curMaskPct;
+    document.getElementById('slider-val').textContent = curMaskPct + '%';
+  }
   renderVerse();
 }
 
